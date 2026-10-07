@@ -1,6 +1,6 @@
-import { QUESTIONS } from "../data/questions.js";
+import { ALL_QUESTIONS, getSubject } from "../data/subjects.js";
 
-const byId = new Map(QUESTIONS.map((q) => [q.id, q]));
+const byId = new Map(ALL_QUESTIONS.map((q) => [q.id, q]));
 export const getQuestion = (id) => byId.get(id);
 
 export function shuffle(list) {
@@ -12,14 +12,15 @@ export function shuffle(list) {
   return a;
 }
 
-export function poolFor(topics) {
-  return QUESTIONS.filter((q) => topics.includes(q.topic));
+export function poolFor(subjectId, topics) {
+  return getSubject(subjectId).questions.filter((q) => topics.includes(q.topic));
 }
 
 // Each item keeps the order its choices were shown in.
 // order[k] is the index into question.choices, so 0 is always the correct one.
-export function createSession({ ids, mode }) {
+export function createSession({ ids, mode, subject }) {
   return {
+    subject,
     mode,
     items: shuffle(ids).map((id) => ({
       id,
@@ -63,6 +64,15 @@ export function formatTime(seconds) {
   return m ? `${m}m ${s}s` : `${s}s`;
 }
 
+export function remember(key, value) {
+  try {
+    if (value === undefined) return localStorage.getItem(key);
+    localStorage.setItem(key, value);
+  } catch {
+    return null;
+  }
+}
+
 const KEY = "ict-reviewer-session";
 
 export function saveSession(session) {
@@ -77,7 +87,7 @@ export function saveSession(session) {
 export function loadSession() {
   try {
     const s = JSON.parse(localStorage.getItem(KEY));
-    if (s?.items?.length && s.items.every((it) => byId.has(it.id))) return s;
+    if (s?.subject && s.items?.length && s.items.every((it) => byId.has(it.id))) return s;
   } catch {
     // ignore broken or blocked storage
   }

@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { TOPICS } from "../data/questions.js";
-import { poolFor, shuffle } from "../lib/quiz.js";
+import { SUBJECTS, getSubject } from "../data/subjects.js";
+import { poolFor, remember, shuffle } from "../lib/quiz.js";
 
 const COUNTS = [20, 40, 60, 80, 100];
+const SUBJECT_KEY = "ict-reviewer-subject";
 
 const MODES = [
   {
@@ -17,20 +18,30 @@ const MODES = [
   },
 ];
 
-export default function Setup({ onStart, saved, onResume, onDiscard }) {
-  const [topics, setTopics] = useState(TOPICS);
+export default function Setup({ onStart, onStudy, saved, onResume, onDiscard }) {
+  const [subjectId, setSubjectId] = useState(() => getSubject(remember(SUBJECT_KEY)).id);
+  const subject = getSubject(subjectId);
+  const [topics, setTopics] = useState(subject.topics);
   const [count, setCount] = useState(20);
   const [mode, setMode] = useState("instant");
 
-  const pool = poolFor(topics);
+  const pool = poolFor(subjectId, topics);
   const amount = Math.min(count, pool.length);
 
+  const pickSubject = (id) => {
+    setSubjectId(id);
+    setTopics(getSubject(id).topics);
+    remember(SUBJECT_KEY, id);
+  };
+
   const toggleTopic = (t) =>
-    setTopics((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : TOPICS.filter((x) => x === t || cur.includes(x))));
+    setTopics((cur) =>
+      cur.includes(t) ? cur.filter((x) => x !== t) : subject.topics.filter((x) => x === t || cur.includes(x))
+    );
 
   const start = () => {
     const ids = shuffle(pool).slice(0, amount).map((q) => q.id);
-    onStart({ ids, mode });
+    onStart({ ids, mode, subject: subjectId });
   };
 
   return (
@@ -38,7 +49,7 @@ export default function Setup({ onStart, saved, onResume, onDiscard }) {
       {saved && (
         <div className="resume card">
           <div>
-            <strong>You have an unfinished quiz.</strong>
+            <strong>You have an unfinished {getSubject(saved.subject).short} quiz.</strong>
             <p className="muted">
               {saved.items.filter((it) => it.picked !== null).length} of {saved.items.length} answered
             </p>
@@ -51,11 +62,37 @@ export default function Setup({ onStart, saved, onResume, onDiscard }) {
       )}
 
       <section className="intro">
-        <h1>Review your ICT lessons</h1>
+        <h1>Review your lessons</h1>
         <p className="muted">
-          Pick how many items you want and how you want to be checked. Questions and choices are shuffled every time.
+          Pick a subject, how many items you want, and how you want to be checked. Questions and choices are shuffled every time.
         </p>
       </section>
+
+      <div className="subjects" role="radiogroup" aria-label="Subject">
+        {SUBJECTS.map((s) => (
+          <button
+            key={s.id}
+            role="radio"
+            aria-checked={s.id === subjectId}
+            className={`subject ${s.id === subjectId ? "on" : ""}`}
+            onClick={() => pickSubject(s.id)}
+          >
+            <span className="subject-short">{s.short}</span>
+            <span className="subject-name">{s.name}</span>
+            <span className="subject-count">{s.questions.length} questions</span>
+          </button>
+        ))}
+      </div>
+
+      {subject.notes && (
+        <button className="card study-link" onClick={() => onStudy(subjectId)}>
+          <span>
+            <strong>Study notes with diagrams</strong>
+            <span className="muted">Key points, tables, and visuals for every chapter of {subject.short}.</span>
+          </span>
+          <span className="arrow" aria-hidden="true">→</span>
+        </button>
+      )}
 
       <section className="card block">
         <h2>Number of items</h2>
@@ -105,17 +142,17 @@ export default function Setup({ onStart, saved, onResume, onDiscard }) {
           <h2>Topics</h2>
           <button
             className="link"
-            onClick={() => setTopics(topics.length === TOPICS.length ? [] : TOPICS)}
+            onClick={() => setTopics(topics.length === subject.topics.length ? [] : subject.topics)}
           >
-            {topics.length === TOPICS.length ? "Clear all" : "Select all"}
+            {topics.length === subject.topics.length ? "Clear all" : "Select all"}
           </button>
         </div>
         <div className="topics">
-          {TOPICS.map((t) => (
+          {subject.topics.map((t) => (
             <label key={t} className={`topic ${topics.includes(t) ? "on" : ""}`}>
               <input type="checkbox" checked={topics.includes(t)} onChange={() => toggleTopic(t)} />
               <span>{t}</span>
-              <span className="count">{poolFor([t]).length}</span>
+              <span className="count">{poolFor(subjectId, [t]).length}</span>
             </label>
           ))}
         </div>

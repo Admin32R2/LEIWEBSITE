@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Rich from "./Rich.jsx";
+import Explanation from "./Explanation.jsx";
 import { formatTime, getQuestion, isCorrect, summarize } from "../lib/quiz.js";
 
 const LETTERS = ["A", "B", "C", "D"];
@@ -45,14 +46,14 @@ export default function Results({ session, onRetry, onHome }) {
         {missed.length > 0 && (
           <button
             className="btn primary"
-            onClick={() => onRetry({ ids: missed.map((it) => it.id), mode: session.mode })}
+            onClick={() => onRetry({ ids: missed.map((it) => it.id), mode: session.mode, subject: session.subject })}
           >
             Retry the {missed.length} I missed
           </button>
         )}
         <button
           className="btn ghost"
-          onClick={() => onRetry({ ids: session.items.map((it) => it.id), mode: session.mode })}
+          onClick={() => onRetry({ ids: session.items.map((it) => it.id), mode: session.mode, subject: session.subject })}
         >
           Retake same set
         </button>
@@ -131,14 +132,16 @@ export default function Results({ session, onRetry, onHome }) {
                   return (
                     <li key={ci} className={cls}>
                       <span className="letter">{LETTERS[k]}</span>
-                      <span>{q.choices[ci]}</span>
+                      <span>
+                        <Rich text={q.choices[ci]} />
+                      </span>
                       {mine && <em className="mark">Your answer</em>}
                       {ci === 0 && !mine && <em className="mark">Correct answer</em>}
                     </li>
                   );
                 })}
               </ul>
-              <p className="explain">{q.explain}</p>
+              <Explanation q={q} lazyDiagram />
             </article>
           );
         })}

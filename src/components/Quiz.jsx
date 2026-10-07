@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Rich from "./Rich.jsx";
 import Confirm from "./Confirm.jsx";
+import Explanation from "./Explanation.jsx";
 import { getQuestion, isCorrect } from "../lib/quiz.js";
 
 const LETTERS = ["A", "B", "C", "D"];
@@ -137,7 +138,9 @@ export default function Quiz({ session, setSession, onQuit }) {
                 <li key={ci}>
                   <button className={cls} onClick={() => pick(k)} disabled={locked}>
                     <span className="letter">{LETTERS[k]}</span>
-                    <span className="choice-text">{q.choices[ci]}</span>
+                    <span className="choice-text">
+                      <Rich text={q.choices[ci]} />
+                    </span>
                   </button>
                 </li>
               );
@@ -149,10 +152,10 @@ export default function Quiz({ session, setSession, onQuit }) {
               <strong>{isCorrect(item) ? "Correct" : "Not quite"}</strong>
               {!isCorrect(item) && (
                 <p>
-                  The answer is <b>{LETTERS[item.order.indexOf(0)]}</b>. {q.choices[0]}
+                  The answer is <b>{LETTERS[item.order.indexOf(0)]}</b>. <Rich text={q.choices[0]} />
                 </p>
               )}
-              <p className="explain">{q.explain}</p>
+              <Explanation q={q} />
             </div>
           )}
         </article>
