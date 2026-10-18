@@ -121,6 +121,14 @@ export default function Quiz({ session, setSession, onQuit }) {
         </div>
 
         <article className="card flash" key={item.id}>
+          {q.context && (
+            <aside className="q-context">
+              <span className="q-context-label">Good to know</span>
+              <p>
+                <Rich text={q.context} />
+              </p>
+            </aside>
+          )}
           <h2 className="q-text">
             <Rich text={q.text} />
           </h2>
